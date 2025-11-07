@@ -7,6 +7,7 @@ import authRoutes from './routes/auth';
 import transactionRoutes from './routes/transactions';
 import studentRoutes from './routes/students';
 import companyRoutes from './routes/companies';
+import advantageRoutes from './routes/advantages';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -66,6 +67,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/companies', companyRoutes);
+app.use('/api/advantages', advantageRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ 

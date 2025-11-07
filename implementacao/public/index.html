@@ -25,6 +25,12 @@
             <button class="nav-tab" data-tab="companies">
                 <i class="fas fa-building"></i> Empresas
             </button>
+            <button class="nav-tab" data-tab="company-advantages">
+                <i class="fas fa-gift"></i> Minhas Vantagens
+            </button>
+            <button class="nav-tab" data-tab="student-advantages">
+                <i class="fas fa-store"></i> Vantagens Disponíveis
+            </button>
         </nav>
 
         <!-- Students Section -->
@@ -99,6 +105,62 @@
                         <!-- Companies will be loaded here -->
                     </tbody>
                 </table>
+            </div>
+        </section>
+
+        <!-- Company Advantages Section -->
+        <section id="company-advantages" class="content-section">
+            <div class="section-header">
+                <h2><i class="fas fa-gift"></i> Gerenciar Vantagens</h2>
+                <button class="btn btn-primary" onclick="openAdvantageModal()">
+                    <i class="fas fa-plus"></i> Nova Vantagem
+                </button>
+            </div>
+
+            <!-- Search and Filter -->
+            <div class="search-container">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="advantageSearch" placeholder="Buscar vantagens..." onkeyup="filterAdvantages()">
+                </div>
+            </div>
+
+            <!-- Advantages Table -->
+            <div class="table-container">
+                <table class="data-table" id="advantagesTable">
+                    <thead>
+                        <tr>
+                            <th>Título</th>
+                            <th>Descrição</th>
+                            <th>Custo (Moedas)</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="advantagesTableBody">
+                        <!-- Advantages will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Student Advantages Section -->
+        <section id="student-advantages" class="content-section">
+            <div class="section-header">
+                <h2><i class="fas fa-store"></i> Vantagens Disponíveis</h2>
+            </div>
+
+            <!-- Search and Filter -->
+            <div class="search-container">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="studentAdvantageSearch" placeholder="Buscar vantagens..." onkeyup="filterStudentAdvantages()">
+                </div>
+            </div>
+
+            <!-- Advantages Grid -->
+            <div id="studentAdvantagesGrid" class="advantages-grid">
+                <!-- Advantages cards will be loaded here -->
             </div>
         </section>
     </div>
@@ -197,6 +259,45 @@
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeCompanyModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Advantage Modal -->
+    <div id="advantageModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="advantageModalTitle">Nova Vantagem</h3>
+                <span class="close" onclick="closeAdvantageModal()">&times;</span>
+            </div>
+            <form id="advantageForm" onsubmit="saveAdvantage(event)">
+                <div class="form-group">
+                    <label for="advantageTitle">Título *</label>
+                    <input type="text" id="advantageTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="advantageDescription">Descrição *</label>
+                    <textarea id="advantageDescription" rows="4" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="advantageImageUrl">URL da Imagem</label>
+                    <input type="url" id="advantageImageUrl" placeholder="https://exemplo.com/imagem.jpg">
+                </div>
+                <div class="form-group">
+                    <label for="advantageCostCoins">Custo em Moedas *</label>
+                    <input type="number" id="advantageCostCoins" required min="1" step="1">
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="advantageActive" checked>
+                        <span class="checkmark"></span>
+                        Vantagem Ativa
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeAdvantageModal()">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Salvar</button>
                 </div>
             </form>
