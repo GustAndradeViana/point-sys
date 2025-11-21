@@ -142,7 +142,8 @@ export class DatabaseManager {
       INSERT OR IGNORE INTO users (email, password, type) VALUES 
       ('admin@test.com', '${passwordHash}', 'admin'),
       ('aluno@test.com', '${passwordHash}', 'student'),
-      ('empresa@test.com', '${passwordHash}', 'company');
+      ('empresa@test.com', '${passwordHash}', 'company'),
+      ('professor@test.com', '${passwordHash}', 'professor');
     `;
 
     this.db.exec(institutionsSQL, (err) => {
@@ -158,7 +159,7 @@ export class DatabaseManager {
         console.error('Erro ao inserir usuários:', err);
       } else {
         console.log('Usuários padrão inseridos!');
-        // Criar dados do aluno e empresa após os usuários serem criados
+        // Criar dados do aluno, empresa e professor após os usuários serem criados
         this.createDefaultStudentAndCompany();
       }
     });
@@ -183,6 +184,40 @@ export class DatabaseManager {
           console.error('Erro ao inserir aluno padrão:', err);
         } else {
           console.log('Aluno padrão criado com sucesso!');
+        }
+      });
+    });
+
+    // Criar professor padrão com crédito inicial de moedas
+    this.db.get("SELECT id FROM users WHERE email = 'professor@test.com'", (err, professorUser: any) => {
+      if (err || !professorUser) {
+        console.error('Erro ao buscar usuário professor:', err);
+        return;
+      }
+
+      const professorSQL = `
+        INSERT OR IGNORE INTO professors (user_id, name, cpf, department, institution_id)
+        VALUES (?, 'Professor Exemplo', '98765432100', 'Departamento de Computação', 1)
+      `;
+
+      this.db.run(professorSQL, [professorUser.id], (profErr) => {
+        if (profErr) {
+          console.error('Erro ao inserir professor padrão:', profErr);
+        } else {
+          console.log('Professor padrão criado com sucesso');
+
+          const creditSQL = `
+            INSERT INTO transactions (from_user_id, to_user_id, amount, reason, transaction_type)
+            VALUES (NULL, ?, 1000, 'Crédito inicial de moedas do semestre', 'semester_credit')
+          `;
+
+          this.db.run(creditSQL, [professorUser.id], (txErr) => {
+            if (txErr) {
+              console.error('Erro ao inserir crédito inicial de moedas para o professor padrão:', txErr);
+            } else {
+              console.log('Crédito inicial de 1000 moedas concedido ao professor padrão');
+            }
+          });
         }
       });
     });

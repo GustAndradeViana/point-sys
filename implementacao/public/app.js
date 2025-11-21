@@ -8,6 +8,8 @@ class PointSystem {
         this.companies = [];
         this.advantages = [];
         this.studentAdvantages = [];
+        this.transactions = [];
+        this.balance = 0;
         this.currentStudentId = null;
         this.currentCompanyId = null;
         this.currentAdvantageId = null;
@@ -58,6 +60,10 @@ class PointSystem {
         document.getElementById('adminNav').style.display = 'none';
         document.getElementById('studentNav').style.display = 'none';
         document.getElementById('companyNav').style.display = 'none';
+        const professorNav = document.getElementById('professorNav');
+        if (professorNav) {
+            professorNav.style.display = 'none';
+        }
 
         // Esconder todas as seções
         document.querySelectorAll('.content-section').forEach(section => {
@@ -77,6 +83,15 @@ class PointSystem {
             document.getElementById('companyNav').style.display = 'flex';
             document.getElementById('company-advantages').style.display = 'block';
             this.setupTabNavigation();
+        } else if (userType === 'professor') {
+            if (professorNav) {
+                professorNav.style.display = 'flex';
+            }
+            const sendSection = document.getElementById('professor-send-coins');
+            if (sendSection) {
+                sendSection.style.display = 'block';
+            }
+            this.setupTabNavigation();
         }
     }
 
@@ -84,7 +99,8 @@ class PointSystem {
         const labels = {
             'admin': 'Administrador',
             'student': 'Aluno',
-            'company': 'Empresa Parceira'
+            'company': 'Empresa Parceira',
+            'professor': 'Professor'
         };
         return labels[type] || type;
     }
@@ -101,6 +117,145 @@ class PointSystem {
             this.loadStudentAdvantages();
         } else if (userType === 'company') {
             this.loadAdvantages();
+        } else if (userType === 'professor') {
+            this.loadProfessorAccount();
+        }
+    }
+
+    async loadAccountData(balanceElementId, transactionsBodyId) {
+        const tbody = document.getElementById(transactionsBodyId);
+        const balanceElement = document.getElementById(balanceElementId);
+
+        if (!tbody) {
+            return;
+        }
+
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 40px;">
+                    <div class="loading"></div>
+                    <p style="margin-top: 10px; color: #718096;">Carregando extrato...</p>
+                </td>
+            </tr>
+        `;
+
+        try {
+            const balanceResponse = await this.makeRequest('/transactions/balance', 'GET', null, true);
+            const transactionsResponse = await this.makeRequest('/transactions', 'GET', null, true);
+
+            this.balance = balanceResponse.balance || 0;
+            this.transactions = transactionsResponse.transactions || [];
+
+            if (balanceElement) {
+                balanceElement.textContent = `${this.balance} moedas`;
+            }
+
+            const professorBalanceSend = document.getElementById('professorBalanceSend');
+            if (professorBalanceSend && balanceElementId === 'professorBalance') {
+                professorBalanceSend.textContent = `${this.balance} moedas`;
+            }
+
+            const currentUserId = this.currentUser ? this.currentUser.id : null;
+
+            if (this.transactions.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="empty-state">
+                            <i class="fas fa-receipt"></i>
+                            <h3>Nenhuma transação encontrada</h3>
+                            <p>As transações aparecerão aqui assim que forem realizadas.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = this.transactions.map(tx => {
+                const date = new Date(tx.created_at).toLocaleString('pt-BR');
+                let typeLabel = 'Transferência';
+                if (tx.transaction_type === 'semester_credit') {
+                    typeLabel = 'Crédito Semestral';
+                } else if (tx.transaction_type === 'redemption') {
+                    typeLabel = 'Resgate de Vantagem';
+                }
+
+                const isIncoming = currentUserId && tx.to_user_id === currentUserId;
+                const valorPrefix = isIncoming ? '+' : '-';
+                const badgeClass = isIncoming ? 'status-active' : 'status-inactive';
+
+                let description = '';
+                if (tx.transaction_type === 'transfer') {
+                    description = isIncoming ? 'Moedas recebidas' : 'Moedas enviadas';
+                    if (tx.reason) {
+                        description += ` - ${tx.reason}`;
+                    }
+                } else if (tx.transaction_type === 'semester_credit') {
+                    description = 'Crédito semestral de moedas';
+                } else if (tx.transaction_type === 'redemption') {
+                    description = 'Resgate de vantagem';
+                }
+
+                const otherEmail = isIncoming ? (tx.from_email || '-') : (tx.to_email || '-');
+
+                return `
+                    <tr>
+                        <td>${date}</td>
+                        <td>${typeLabel}</td>
+                        <td>${description}</td>
+                        <td>
+                            <span class="status-badge ${badgeClass}">
+                                ${valorPrefix} ${tx.amount} moedas
+                            </span>
+                        </td>
+                        <td>${otherEmail}</td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (error) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Erro ao carregar extrato</h3>
+                        <p>Verifique a conexão com o servidor</p>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    async loadStudentAccount() {
+        await this.loadAccountData('studentBalance', 'studentTransactionsBody');
+    }
+
+    async loadProfessorAccount() {
+        await this.loadAccountData('professorBalance', 'professorTransactionsBody');
+    }
+
+    async sendCoins(sendData) {
+        this.showLoading('Enviando moedas...');
+        
+        try {
+            const payload = {
+                to_email: sendData.to_email,
+                amount: parseInt(sendData.amount, 10),
+                reason: sendData.reason
+            };
+
+            const response = await this.makeRequest('/transactions/send', 'POST', payload, true);
+            console.log('sendCoins_response', response);
+
+            this.hideLoading();
+            this.showToast('Moedas enviadas com sucesso!', 'success');
+
+            await this.loadProfessorAccount();
+
+            const sendCoinsForm = document.getElementById('sendCoinsForm');
+            if (sendCoinsForm) {
+                sendCoinsForm.reset();
+            }
+        } catch (error) {
+            this.hideLoading();
         }
     }
 
@@ -1027,6 +1182,10 @@ class PointSystem {
             this.loadStudents();
         } else if (tabName === 'admin-companies') {
             this.loadCompanies();
+        } else if (tabName === 'student-extract') {
+            this.loadStudentAccount();
+        } else if (tabName === 'professor-send-coins' || tabName === 'professor-extract') {
+            this.loadProfessorAccount();
         }
     }
 }
@@ -1208,4 +1367,16 @@ function filterAdvantages() {
 
 function filterStudentAdvantages() {
     app.filterStudentAdvantages();
+}
+
+function handleSendCoins(event) {
+    event.preventDefault();
+
+    const formData = {
+        to_email: document.getElementById('sendCoinsStudentEmail').value,
+        amount: document.getElementById('sendCoinsAmount').value,
+        reason: document.getElementById('sendCoinsReason').value
+    };
+
+    app.sendCoins(formData);
 }

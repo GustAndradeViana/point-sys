@@ -15,6 +15,7 @@ export class Transaction {
 
   public async create(transactionData: Omit<ITransaction, 'id' | 'created_at'>): Promise<ITransaction> {
     return new Promise((resolve, reject) => {
+      const db = this.db;
       const stmt = this.db.prepare(`
         INSERT INTO transactions (from_user_id, to_user_id, amount, reason, transaction_type)
         VALUES (?, ?, ?, ?, ?)
@@ -30,7 +31,7 @@ export class Transaction {
           if (err) {
             reject(err);
           } else {
-            const findStmt = this.db.prepare('SELECT * FROM transactions WHERE id = ?');
+            const findStmt = db.prepare('SELECT * FROM transactions WHERE id = ?');
             findStmt.get(this.lastID, (err, row) => {
               if (err) {
                 reject(err);

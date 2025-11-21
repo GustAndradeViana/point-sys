@@ -59,6 +59,19 @@
             <button class="nav-tab active" data-tab="student-advantages">
                 <i class="fas fa-store"></i> Vantagens Disponíveis
             </button>
+            <button class="nav-tab" data-tab="student-extract">
+                <i class="fas fa-wallet"></i> Meu Extrato
+            </button>
+        </nav>
+
+        <!-- Navigation - Professor -->
+        <nav id="professorNav" class="nav-tabs" style="display: none;">
+            <button class="nav-tab active" data-tab="professor-send-coins">
+                <i class="fas fa-coins"></i> Enviar Moedas
+            </button>
+            <button class="nav-tab" data-tab="professor-extract">
+                <i class="fas fa-list"></i> Extrato
+            </button>
         </nav>
 
         <!-- Navigation - Company -->
@@ -196,6 +209,102 @@
             <!-- Advantages Grid -->
             <div id="studentAdvantagesGrid" class="advantages-grid">
                 <!-- Advantages cards will be loaded here -->
+            </div>
+        </section>
+
+        <!-- Student Extract Section -->
+        <section id="student-extract" class="content-section" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-wallet"></i> Meu Extrato de Moedas</h2>
+            </div>
+
+            <div class="account-summary">
+                <div class="account-summary-card">
+                    <h3>Saldo Atual</h3>
+                    <p id="studentBalance" class="account-balance">0 moedas</p>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table" id="studentTransactionsTable">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Tipo</th>
+                            <th>Descrição</th>
+                            <th>Valor</th>
+                            <th>De / Para</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentTransactionsBody">
+                        <!-- Transactions will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Professor Send Coins Section -->
+        <section id="professor-send-coins" class="content-section" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-coins"></i> Enviar Moedas para Alunos</h2>
+            </div>
+
+            <div class="account-summary">
+                <div class="account-summary-card">
+                    <h3>Saldo Disponível</h3>
+                    <p id="professorBalanceSend" class="account-balance">0 moedas</p>
+                </div>
+            </div>
+
+            <form id="sendCoinsForm" onsubmit="handleSendCoins(event)">
+                <div class="form-group">
+                    <label for="sendCoinsStudentEmail">Email do Aluno *</label>
+                    <input type="email" id="sendCoinsStudentEmail" required placeholder="aluno@exemplo.com">
+                </div>
+                <div class="form-group">
+                    <label for="sendCoinsAmount">Quantidade de Moedas *</label>
+                    <input type="number" id="sendCoinsAmount" required min="1" step="1">
+                </div>
+                <div class="form-group">
+                    <label for="sendCoinsReason">Motivo do Reconhecimento *</label>
+                    <textarea id="sendCoinsReason" rows="4" required placeholder="Descreva o motivo pelo qual o aluno está sendo reconhecido"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Enviar Moedas
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Professor Extract Section -->
+        <section id="professor-extract" class="content-section" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-list"></i> Extrato de Moedas</h2>
+            </div>
+
+            <div class="account-summary">
+                <div class="account-summary-card">
+                    <h3>Saldo Atual</h3>
+                    <p id="professorBalance" class="account-balance">0 moedas</p>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table" id="professorTransactionsTable">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Tipo</th>
+                            <th>Descrição</th>
+                            <th>Valor</th>
+                            <th>De / Para</th>
+                        </tr>
+                    </thead>
+                    <tbody id="professorTransactionsBody">
+                        <!-- Transactions will be loaded here -->
+                    </tbody>
+                </table>
             </div>
         </section>
     </div>

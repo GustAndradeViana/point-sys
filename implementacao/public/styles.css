@@ -720,6 +720,34 @@ form {
     line-height: 1.5;
 }
 
+/* Account Summary / Extract */
+.account-summary {
+    margin-bottom: 25px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.account-summary-card {
+    background: #f7fafc;
+    border-radius: 12px;
+    padding: 20px 24px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    min-width: 220px;
+}
+
+.account-summary-card h3 {
+    font-size: 1rem;
+    color: #4a5568;
+    margin-bottom: 8px;
+}
+
+.account-balance {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #2b6cb0;
+}
+
 /* Advantages Grid */
 .advantages-grid {
     display: grid;

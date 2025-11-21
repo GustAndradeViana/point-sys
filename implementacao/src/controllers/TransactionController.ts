@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Transaction } from '../models/Transaction';
 import { User } from '../models/User';
+import { sendMail } from '../utils/mailer';
 
 export class TransactionController {
   private transactionModel = new Transaction();
@@ -45,9 +46,25 @@ export class TransactionController {
         return;
       }
 
+      const sender = await this.userModel.findById(fromUserId);
+      if (!sender) {
+        res.status(404).json({ error: 'Usuário remetente não encontrado' });
+        return;
+      }
+
+      if (sender.type !== 'professor') {
+        res.status(403).json({ error: 'Apenas professores podem enviar moedas' });
+        return;
+      }
+
       const toUser = await this.userModel.findByEmail(to_email);
       if (!toUser) {
         res.status(404).json({ error: 'Usuário destinatário não encontrado' });
+        return;
+      }
+
+      if (toUser.type !== 'student') {
+        res.status(400).json({ error: 'Moedas só podem ser enviadas para alunos' });
         return;
       }
 
@@ -64,6 +81,16 @@ export class TransactionController {
         reason,
         transaction_type: 'transfer'
       });
+
+      try {
+        await sendMail({
+          to: toUser.email,
+          subject: 'Você recebeu moedas no Sistema de Mérito Acadêmico',
+          text: `Você recebeu ${amount} moedas do professor ${sender.email}.\n\nMotivo: ${reason}`
+        });
+      } catch (mailError) {
+        console.error('Erro ao enviar email de notificação:', mailError);
+      }
 
       res.status(201).json({
         message: 'Moedas enviadas com sucesso',
