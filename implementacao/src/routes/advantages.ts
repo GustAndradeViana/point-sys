@@ -16,6 +16,10 @@ router.put('/demo/:id', advantageController.updateDemo.bind(advantageController)
 router.put('/demo/:id/toggle', advantageController.toggleActiveDemo.bind(advantageController));
 router.delete('/demo/:id', advantageController.deleteDemo.bind(advantageController));
 
+// Rotas protegidas - Resgate de vantagem pelo aluno
+router.post('/:id/redeem', authenticateToken, advantageController.redeem.bind(advantageController));
+router.get('/student/my-redemptions', authenticateToken, advantageController.getStudentRedemptions.bind(advantageController));
+
 // Rotas protegidas - Requerem autenticação de empresa
 router.post('/', authenticateToken, advantageController.create.bind(advantageController));
 router.get('/company/my-advantages', authenticateToken, advantageController.findByCompany.bind(advantageController));

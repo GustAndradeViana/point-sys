@@ -838,6 +838,12 @@ form {
     font-style: italic;
 }
 
+.advantage-card-actions {
+    margin-top: 15px;
+    display: flex;
+    justify-content: flex-end;
+}
+
 @media (max-width: 768px) {
     .advantages-grid {
         grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));

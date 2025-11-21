@@ -8,6 +8,7 @@ class PointSystem {
         this.companies = [];
         this.advantages = [];
         this.studentAdvantages = [];
+        this.studentRedemptions = [];
         this.transactions = [];
         this.balance = 0;
         this.currentStudentId = null;
@@ -254,6 +255,35 @@ class PointSystem {
             if (sendCoinsForm) {
                 sendCoinsForm.reset();
             }
+        } catch (error) {
+            this.hideLoading();
+        }
+    }
+
+    async redeemAdvantage(advantageId) {
+        if (!this.currentUser || this.currentUser.type !== 'student') {
+            this.showToast('Apenas alunos podem resgatar vantagens.', 'error');
+            return;
+        }
+
+        this.showLoading('Resgatando vantagem...');
+
+        try {
+            const response = await this.makeRequest(`/advantages/${advantageId}/redeem`, 'POST', null, true);
+            console.log('redeemAdvantage_response', response);
+
+            this.hideLoading();
+
+            const code = response?.redemption?.redemption_code;
+            const message = code
+                ? `Vantagem resgatada com sucesso! Código: ${code}`
+                : 'Vantagem resgatada com sucesso!';
+
+            this.showToast(message, 'success');
+
+            // Atualizar lista de vantagens e extrato/saldo do aluno
+            await this.loadStudentAdvantages();
+            await this.loadStudentAccount();
         } catch (error) {
             this.hideLoading();
         }
@@ -880,6 +910,18 @@ class PointSystem {
             const {advantages} = await this.makeRequest('/advantages');
             this.studentAdvantages = advantages;
 
+            // Buscar resgates do aluno logado, se houver
+            let redeemedIds = new Set();
+            if (this.currentUser && this.currentUser.type === 'student') {
+                try {
+                    const {redemptions} = await this.makeRequest('/advantages/student/my-redemptions', 'GET', null, true);
+                    this.studentRedemptions = redemptions || [];
+                    redeemedIds = new Set(this.studentRedemptions.map(r => r.advantage_id));
+                } catch (redemptionError) {
+                    console.log('redemptionError', redemptionError);
+                }
+            }
+
             setTimeout(() => {
                 if (this.studentAdvantages.length === 0) {
                     grid.innerHTML = `
@@ -892,29 +934,47 @@ class PointSystem {
                     return;
                 }
 
-                grid.innerHTML = this.studentAdvantages.map(advantage => `
-                    <div class="advantage-card">
-                        <div class="advantage-card-image">
-                            ${advantage.image_url 
-                                ? `<img src="${advantage.image_url}" alt="${advantage.title}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-gift\\'></i>'">`
-                                : `<i class="fas fa-gift"></i>`
-                            }
-                        </div>
-                        <div class="advantage-card-body">
-                            <h3 class="advantage-card-title">${advantage.title}</h3>
-                            <p class="advantage-card-description">${advantage.description}</p>
-                            <div class="advantage-card-footer">
-                                <div class="advantage-card-cost">
-                                    <i class="fas fa-coins"></i>
-                                    ${advantage.cost_coins}
+                grid.innerHTML = this.studentAdvantages.map(advantage => {
+                    const isRedeemed = redeemedIds.has(advantage.id);
+
+                    const actionButton = this.currentUser && this.currentUser.type === 'student'
+                        ? `
+                            <div class="advantage-card-actions">
+                                <button 
+                                    class="btn ${isRedeemed ? 'btn-secondary' : 'btn-primary'} btn-sm"
+                                    ${isRedeemed ? 'disabled' : `onclick="redeemAdvantage(${advantage.id})"`}
+                                >
+                                    ${isRedeemed ? 'Já resgatada' : 'Resgatar'}
+                                </button>
+                            </div>
+                        `
+                        : '';
+
+                    return `
+                        <div class="advantage-card">
+                            <div class="advantage-card-image">
+                                ${advantage.image_url 
+                                    ? `<img src="${advantage.image_url}" alt="${advantage.title}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-gift\\'></i>'">`
+                                    : `<i class="fas fa-gift"></i>`
+                                }
+                            </div>
+                            <div class="advantage-card-body">
+                                <h3 class="advantage-card-title">${advantage.title}</h3>
+                                <p class="advantage-card-description">${advantage.description}</p>
+                                <div class="advantage-card-footer">
+                                    <div class="advantage-card-cost">
+                                        <i class="fas fa-coins"></i>
+                                        ${advantage.cost_coins}
+                                    </div>
+                                    <div class="advantage-card-company">
+                                        ${advantage.company_name || 'Empresa Parceira'}
+                                    </div>
                                 </div>
-                                <div class="advantage-card-company">
-                                    ${advantage.company_name || 'Empresa Parceira'}
-                                </div>
+                                ${actionButton}
                             </div>
                         </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             }, 500);
         } catch (error) {
             grid.innerHTML = `
@@ -1379,4 +1439,8 @@ function handleSendCoins(event) {
     };
 
     app.sendCoins(formData);
+}
+
+function redeemAdvantage(id) {
+    app.redeemAdvantage(id);
 }

@@ -1,11 +1,18 @@
 import { Request, Response } from 'express';
 import { Advantage } from '../models/Advantage';
 import { Company } from '../models/Company';
+import { Student } from '../models/Student';
+import { Transaction } from '../models/Transaction';
+import { Redemption } from '../models/Redemption';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { sendMail } from '../utils/mailer';
 
 export class AdvantageController {
   private advantageModel = new Advantage();
   private companyModel = new Company();
+  private studentModel = new Student();
+  private transactionModel = new Transaction();
+  private redemptionModel = new Redemption();
 
   // CREATE - Criar nova vantagem (apenas para empresas parceiras)
   public async create(req: AuthenticatedRequest, res: Response): Promise<void> {
@@ -98,6 +105,161 @@ export class AdvantageController {
       res.json({ advantages });
     } catch (error) {
       console.error('Erro ao listar vantagens da empresa:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  }
+
+  // STUDENT - Resgatar vantagem
+  public async redeem(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const advantageId = parseInt(id);
+
+      if (isNaN(advantageId)) {
+        res.status(400).json({ error: 'ID inválido' });
+        return;
+      }
+
+      if (req.user.type !== 'student') {
+        res.status(403).json({ error: 'Apenas alunos podem resgatar vantagens' });
+        return;
+      }
+
+      const advantage = await this.advantageModel.findById(advantageId);
+      if (!advantage) {
+        res.status(404).json({ error: 'Vantagem não encontrada' });
+        return;
+      }
+
+      if (!advantage.is_active) {
+        res.status(400).json({ error: 'Vantagem inativa' });
+        return;
+      }
+
+      // Buscar aluno pelo user_id
+      const student = await this.studentModel.findByUserId(req.user.id);
+      if (!student) {
+        res.status(404).json({ error: 'Aluno não encontrado' });
+        return;
+      }
+
+      // Verificar se já existe resgate desta vantagem para este aluno (pendente ou concluído)
+      const existingRedemption = await this.redemptionModel.findByStudentAndAdvantage(student.id, advantageId);
+      if (existingRedemption && existingRedemption.status !== 'cancelled') {
+        res.status(400).json({ error: 'Esta vantagem já foi resgatada por este aluno' });
+        return;
+      }
+
+      // Verificar saldo do aluno
+      const studentBalance = await this.transactionModel.getBalance(req.user.id);
+      if (studentBalance < advantage.cost_coins) {
+        res.status(400).json({ error: 'Saldo insuficiente para resgatar esta vantagem' });
+        return;
+      }
+
+      // Buscar empresa dona da vantagem
+      const company = await this.companyModel.findById(advantage.company_id);
+      if (!company) {
+        res.status(404).json({ error: 'Empresa parceira não encontrada para esta vantagem' });
+        return;
+      }
+
+      // Criar transação de resgate (do aluno para a empresa)
+      const transaction = await this.transactionModel.create({
+        from_user_id: req.user.id,
+        to_user_id: company.user_id,
+        amount: advantage.cost_coins,
+        reason: `Resgate da vantagem: ${advantage.title}`,
+        transaction_type: 'redemption'
+      });
+
+      // Gerar código de resgate
+      const redemptionCode = `RDM-${Date.now().toString(36).toUpperCase()}-${Math.random()
+        .toString(36)
+        .substring(2, 6)
+        .toUpperCase()}`;
+
+      // Registrar resgate
+      const redemption = await this.redemptionModel.create({
+        student_id: student.id,
+        advantage_id: advantage.id,
+        transaction_id: transaction.id,
+        redemption_code: redemptionCode,
+        status: 'pending'
+      });
+
+      // Enviar emails com o cupom (aluno e empresa)
+      const studentEmail = req.user.email;
+      const companyEmail = company.email || (company as any).user_email;
+
+      const emailText = `Cupom de resgate - Sistema de Mérito Acadêmico
+
+Vantagem: ${advantage.title}
+Empresa: ${company.name}
+Valor em moedas: ${advantage.cost_coins}
+
+Código do resgate: ${redemptionCode}
+
+Apresente este código no momento da utilização da vantagem.`;
+
+      try {
+        if (studentEmail) {
+          await sendMail({
+            to: studentEmail,
+            subject: 'Cupom de vantagem resgatada',
+            text: emailText
+          });
+        }
+
+        if (companyEmail) {
+          await sendMail({
+            to: companyEmail,
+            subject: 'Aluno resgatou uma vantagem',
+            text: emailText
+          });
+        }
+      } catch (mailError) {
+        console.log('mailError', mailError);
+      }
+
+      res.status(201).json({
+        message: 'Vantagem resgatada com sucesso',
+        redemption: {
+          id: redemption.id,
+          redemption_code: redemption.redemption_code,
+          status: redemption.status,
+          created_at: redemption.created_at
+        },
+        transaction: {
+          id: transaction.id,
+          amount: transaction.amount,
+          created_at: transaction.created_at
+        }
+      });
+    } catch (error) {
+      console.error('Erro ao resgatar vantagem:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  }
+
+  // STUDENT - Listar resgates do aluno logado
+  public async getStudentRedemptions(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      if (req.user.type !== 'student') {
+        res.status(403).json({ error: 'Apenas alunos podem visualizar seus resgates' });
+        return;
+      }
+
+      const student = await this.studentModel.findByUserId(req.user.id);
+      if (!student) {
+        res.status(404).json({ error: 'Aluno não encontrado' });
+        return;
+      }
+
+      const redemptions = await this.redemptionModel.findByStudentId(student.id);
+      res.json({ redemptions });
+    } catch (error) {
+      console.error('Erro ao listar resgates do aluno:', error);
       res.status(500).json({ error: 'Erro interno do servidor' });
     }
   }
