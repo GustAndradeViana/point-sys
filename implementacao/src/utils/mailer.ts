@@ -30,7 +30,8 @@ export async function sendMail(options: SendMailOptions): Promise<void> {
     console.log('sendMail_simulado', {
       to: options.to,
       subject: options.subject,
-      text: options.text
+      text: options.text,
+      hasHtml: !!options.html
     });
     return;
   }

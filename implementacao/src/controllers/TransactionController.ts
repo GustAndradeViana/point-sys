@@ -1,11 +1,20 @@
 import { Request, Response } from 'express';
 import { Transaction } from '../models/Transaction';
 import { User } from '../models/User';
+import { Student } from '../models/Student';
+import { Redemption } from '../models/Redemption';
+import { Advantage } from '../models/Advantage';
+import { Company } from '../models/Company';
 import { sendMail } from '../utils/mailer';
+import { AuthenticatedRequest } from '../middleware/auth';
 
 export class TransactionController {
   private transactionModel = new Transaction();
   private userModel = new User();
+  private studentModel = new Student();
+  private redemptionModel = new Redemption();
+  private advantageModel = new Advantage();
+  private companyModel = new Company();
 
   public async getBalance(req: Request, res: Response): Promise<void> {
     try {
@@ -103,6 +112,96 @@ export class TransactionController {
       });
     } catch (error) {
       console.error('Erro ao enviar moedas:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  }
+
+  // PROFESSOR - Listar alunos que receberam moedas e seus resgates
+  public async getStudentsWithRedemptions(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const professorId = req.user.id;
+
+      if (req.user.type !== 'professor') {
+        res.status(403).json({ error: 'Apenas professores podem visualizar esta informação' });
+        return;
+      }
+
+      // Buscar todas as transações enviadas pelo professor
+      const allTransactions = await this.transactionModel.findByUserId(professorId);
+      const sentTransactions = allTransactions.filter(
+        tx => tx.from_user_id === professorId && tx.transaction_type === 'transfer'
+      );
+
+      // Agrupar por aluno e buscar informações
+      const studentMap = new Map<number, {
+        student: any;
+        transactions: any[];
+        redemptions: any[];
+        totalReceived: number;
+      }>();
+
+      for (const transaction of sentTransactions) {
+        if (!transaction.to_user_id) continue;
+
+        const toUser = await this.userModel.findById(transaction.to_user_id);
+        if (!toUser || toUser.type !== 'student') continue;
+
+        const student = await this.studentModel.findByUserId(toUser.id);
+        if (!student) continue;
+
+        if (!studentMap.has(student.id)) {
+          studentMap.set(student.id, {
+            student: {
+              id: student.id,
+              name: student.name,
+              email: toUser.email,
+              course: student.course,
+              institution_name: (student as any).institution_name
+            },
+            transactions: [],
+            redemptions: [],
+            totalReceived: 0
+          });
+        }
+
+        const studentData = studentMap.get(student.id)!;
+        studentData.transactions.push({
+          id: transaction.id,
+          amount: transaction.amount,
+          reason: transaction.reason,
+          created_at: transaction.created_at
+        });
+        studentData.totalReceived += transaction.amount;
+
+        // Buscar resgates do aluno
+        const redemptions = await this.redemptionModel.findByStudentId(student.id);
+        for (const redemption of redemptions) {
+          const advantage = await this.advantageModel.findById(redemption.advantage_id);
+          if (!advantage) continue;
+
+          const company = await this.companyModel.findById(advantage.company_id);
+          studentData.redemptions.push({
+            id: redemption.id,
+            redemption_code: redemption.redemption_code,
+            status: redemption.status,
+            created_at: redemption.created_at,
+            advantage: {
+              id: advantage.id,
+              title: advantage.title,
+              cost_coins: advantage.cost_coins
+            },
+            company: company ? {
+              id: company.id,
+              name: company.name
+            } : null
+          });
+        }
+      }
+
+      const result = Array.from(studentMap.values());
+      res.json({ students: result });
+    } catch (error) {
+      console.error('Erro ao buscar alunos com resgates:', error);
       res.status(500).json({ error: 'Erro interno do servidor' });
     }
   }

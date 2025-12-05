@@ -860,3 +860,350 @@ form {
         height: 150px;
     }
 }
+
+/* Coupons Container */
+.coupons-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.coupon-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-left: 4px solid #667eea;
+}
+
+.coupon-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.coupon-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+}
+
+.coupon-code-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+}
+
+.coupon-code-display i {
+    font-size: 1.5rem;
+}
+
+.coupon-code-text {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    letter-spacing: 2px;
+    font-size: 1.2rem;
+}
+
+.coupon-body {
+    padding: 20px;
+}
+
+.coupon-body h3 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 10px;
+}
+
+.coupon-description {
+    color: #718096;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.coupon-details {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.coupon-detail-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #4a5568;
+    font-size: 0.9rem;
+}
+
+.coupon-detail-item i {
+    color: #667eea;
+    width: 20px;
+}
+
+.coupon-footer {
+    padding: 15px 20px;
+    background: #f7fafc;
+    border-top: 1px solid #e2e8f0;
+}
+
+.coupon-instruction {
+    color: #718096;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.coupon-instruction i {
+    color: #667eea;
+}
+
+/* Students Container */
+.students-container {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.student-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.student-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.student-header {
+    padding: 20px;
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    border-bottom: 2px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.student-info h3 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.student-info h3 i {
+    color: #667eea;
+}
+
+.student-email,
+.student-course,
+.student-institution {
+    color: #718096;
+    font-size: 0.9rem;
+    margin: 5px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.student-email i,
+.student-course i,
+.student-institution i {
+    color: #667eea;
+    width: 16px;
+}
+
+.student-stats {
+    display: flex;
+    gap: 20px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 15px 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    min-width: 120px;
+}
+
+.stat-label {
+    display: block;
+    color: #718096;
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    display: block;
+    color: #667eea;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.student-transactions,
+.redemptions-section {
+    padding: 20px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.student-transactions h4,
+.redemptions-section h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.student-transactions h4 i,
+.redemptions-section h4 i {
+    color: #667eea;
+}
+
+.transactions-list,
+.redemptions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.transaction-item,
+.redemption-item {
+    padding: 15px;
+    background: #f7fafc;
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+    transition: background 0.2s ease;
+}
+
+.transaction-item:hover,
+.redemption-item:hover {
+    background: #edf2f7;
+}
+
+.transaction-amount {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 8px;
+}
+
+.transaction-amount i {
+    color: #667eea;
+}
+
+.transaction-reason {
+    color: #4a5568;
+    font-size: 0.95rem;
+    margin-bottom: 5px;
+}
+
+.transaction-date {
+    color: #718096;
+    font-size: 0.85rem;
+}
+
+.redemption-code {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 8px;
+}
+
+.redemption-code i {
+    color: #667eea;
+}
+
+.redemption-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.redemption-details {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    color: #718096;
+    font-size: 0.85rem;
+}
+
+.redemption-details span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.redemption-details i {
+    color: #667eea;
+}
+
+.no-redemptions {
+    padding: 20px;
+    text-align: center;
+    color: #718096;
+    background: #f7fafc;
+    border-radius: 8px;
+}
+
+.no-redemptions i {
+    font-size: 2rem;
+    color: #cbd5e0;
+    margin-bottom: 10px;
+}
+
+.status-pending {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+@media (max-width: 768px) {
+    .coupons-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .student-header {
+        flex-direction: column;
+    }
+    
+    .student-stats {
+        width: 100%;
+        justify-content: space-around;
+    }
+    
+    .redemption-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

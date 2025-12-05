@@ -59,6 +59,9 @@
             <button class="nav-tab active" data-tab="student-advantages">
                 <i class="fas fa-store"></i> Vantagens Disponíveis
             </button>
+            <button class="nav-tab" data-tab="student-coupons">
+                <i class="fas fa-ticket-alt"></i> Meus Cupons
+            </button>
             <button class="nav-tab" data-tab="student-extract">
                 <i class="fas fa-wallet"></i> Meu Extrato
             </button>
@@ -68,6 +71,9 @@
         <nav id="professorNav" class="nav-tabs" style="display: none;">
             <button class="nav-tab active" data-tab="professor-send-coins">
                 <i class="fas fa-coins"></i> Enviar Moedas
+            </button>
+            <button class="nav-tab" data-tab="professor-students">
+                <i class="fas fa-user-graduate"></i> Alunos e Resgates
             </button>
             <button class="nav-tab" data-tab="professor-extract">
                 <i class="fas fa-list"></i> Extrato
@@ -212,6 +218,17 @@
             </div>
         </section>
 
+        <!-- Student Coupons Section -->
+        <section id="student-coupons" class="content-section" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-ticket-alt"></i> Meus Cupons Resgatados</h2>
+            </div>
+
+            <div id="studentCouponsContainer" class="coupons-container">
+                <!-- Coupons will be loaded here -->
+            </div>
+        </section>
+
         <!-- Student Extract Section -->
         <section id="student-extract" class="content-section" style="display: none;">
             <div class="section-header">
@@ -275,6 +292,17 @@
                     </button>
                 </div>
             </form>
+        </section>
+
+        <!-- Professor Students Section -->
+        <section id="professor-students" class="content-section" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-user-graduate"></i> Alunos que Receberam Moedas</h2>
+            </div>
+
+            <div id="professorStudentsContainer" class="students-container">
+                <!-- Students will be loaded here -->
+            </div>
         </section>
 
         <!-- Professor Extract Section -->

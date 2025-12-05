@@ -233,6 +233,127 @@ class PointSystem {
         await this.loadAccountData('professorBalance', 'professorTransactionsBody');
     }
 
+    async loadProfessorStudents() {
+        const container = document.getElementById('professorStudentsContainer');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; width: 100%;">
+                <div class="loading"></div>
+                <p style="margin-top: 10px; color: #718096;">Carregando alunos...</p>
+            </div>
+        `;
+
+        try {
+            const { students } = await this.makeRequest('/transactions/professor/students-with-redemptions', 'GET', null, true);
+            console.log('loadProfessorStudents_students', students);
+
+            if (!students || students.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="width: 100%;">
+                        <i class="fas fa-user-graduate"></i>
+                        <h3>Nenhum aluno encontrado</h3>
+                        <p>Você ainda não enviou moedas para nenhum aluno.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = students.map(studentData => {
+                const redemptionsHtml = studentData.redemptions.length > 0
+                    ? `
+                        <div class="redemptions-section">
+                            <h4><i class="fas fa-ticket-alt"></i> Cupons Resgatados (${studentData.redemptions.length})</h4>
+                            <div class="redemptions-list">
+                                ${studentData.redemptions.map(redemption => {
+                                    const date = new Date(redemption.created_at).toLocaleString('pt-BR');
+                                    const statusClass = redemption.status === 'completed' ? 'status-active' : 
+                                                       redemption.status === 'cancelled' ? 'status-inactive' : 'status-pending';
+                                    const statusLabel = redemption.status === 'completed' ? 'Utilizado' :
+                                                       redemption.status === 'cancelled' ? 'Cancelado' : 'Pendente';
+                                    
+                                    return `
+                                        <div class="redemption-item">
+                                            <div class="redemption-code">
+                                                <i class="fas fa-ticket-alt"></i>
+                                                <strong>${redemption.redemption_code}</strong>
+                                            </div>
+                                            <div class="redemption-info">
+                                                <span>${redemption.advantage?.title || 'Vantagem'}</span>
+                                                <span class="status-badge ${statusClass}">${statusLabel}</span>
+                                            </div>
+                                            <div class="redemption-details">
+                                                <span><i class="fas fa-building"></i> ${redemption.company?.name || 'Empresa'}</span>
+                                                <span><i class="fas fa-coins"></i> ${redemption.advantage?.cost_coins || 0} moedas</span>
+                                                <span><i class="fas fa-calendar"></i> ${date}</span>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `
+                    : `
+                        <div class="no-redemptions">
+                            <i class="fas fa-info-circle"></i>
+                            <p>Este aluno ainda não resgatou nenhuma vantagem.</p>
+                        </div>
+                    `;
+
+                return `
+                    <div class="student-card">
+                        <div class="student-header">
+                            <div class="student-info">
+                                <h3><i class="fas fa-user-graduate"></i> ${studentData.student.name}</h3>
+                                <p class="student-email"><i class="fas fa-envelope"></i> ${studentData.student.email}</p>
+                                ${studentData.student.course ? `<p class="student-course"><i class="fas fa-book"></i> ${studentData.student.course}</p>` : ''}
+                                ${studentData.student.institution_name ? `<p class="student-institution"><i class="fas fa-university"></i> ${studentData.student.institution_name}</p>` : ''}
+                            </div>
+                            <div class="student-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Total Recebido</span>
+                                    <span class="stat-value">${studentData.totalReceived} moedas</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Transações</span>
+                                    <span class="stat-value">${studentData.transactions.length}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="student-transactions">
+                            <h4><i class="fas fa-history"></i> Histórico de Moedas Enviadas</h4>
+                            <div class="transactions-list">
+                                ${studentData.transactions.map(tx => {
+                                    const date = new Date(tx.created_at).toLocaleString('pt-BR');
+                                    return `
+                                        <div class="transaction-item">
+                                            <div class="transaction-amount">
+                                                <i class="fas fa-coins"></i>
+                                                <strong>${tx.amount} moedas</strong>
+                                            </div>
+                                            <div class="transaction-reason">${tx.reason || 'Sem motivo especificado'}</div>
+                                            <div class="transaction-date">${date}</div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                        ${redemptionsHtml}
+                    </div>
+                `;
+            }).join('');
+        } catch (error) {
+            console.error('Erro ao carregar alunos:', error);
+            container.innerHTML = `
+                <div class="empty-state" style="width: 100%;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Erro ao carregar alunos</h3>
+                    <p>Verifique a conexão com o servidor</p>
+                </div>
+            `;
+        }
+    }
+
     async sendCoins(sendData) {
         this.showLoading('Enviando moedas...');
         
@@ -895,6 +1016,87 @@ class PointSystem {
     }
 
     // Student Advantages Management
+    async loadStudentCoupons() {
+        const container = document.getElementById('studentCouponsContainer');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; width: 100%;">
+                <div class="loading"></div>
+                <p style="margin-top: 10px; color: #718096;">Carregando cupons...</p>
+            </div>
+        `;
+
+        try {
+            const { redemptions } = await this.makeRequest('/advantages/student/my-redemptions', 'GET', null, true);
+            console.log('loadStudentCoupons_redemptions', redemptions);
+
+            if (!redemptions || redemptions.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="width: 100%;">
+                        <i class="fas fa-ticket-alt"></i>
+                        <h3>Nenhum cupom resgatado</h3>
+                        <p>Você ainda não resgatou nenhuma vantagem. Explore as vantagens disponíveis!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = redemptions.map(redemption => {
+                const date = new Date(redemption.created_at).toLocaleString('pt-BR');
+                const statusClass = redemption.status === 'completed' ? 'status-active' : 
+                                   redemption.status === 'cancelled' ? 'status-inactive' : 'status-pending';
+                const statusLabel = redemption.status === 'completed' ? 'Utilizado' :
+                                   redemption.status === 'cancelled' ? 'Cancelado' : 'Pendente';
+
+                return `
+                    <div class="coupon-card">
+                        <div class="coupon-header">
+                            <div class="coupon-code-display">
+                                <i class="fas fa-ticket-alt"></i>
+                                <span class="coupon-code-text">${redemption.redemption_code}</span>
+                            </div>
+                            <span class="status-badge ${statusClass}">${statusLabel}</span>
+                        </div>
+                        <div class="coupon-body">
+                            <h3>${redemption.advantage?.title || 'Vantagem não encontrada'}</h3>
+                            <p class="coupon-description">${redemption.advantage?.description || ''}</p>
+                            <div class="coupon-details">
+                                <div class="coupon-detail-item">
+                                    <i class="fas fa-building"></i>
+                                    <span>${redemption.company?.name || 'Empresa não encontrada'}</span>
+                                </div>
+                                <div class="coupon-detail-item">
+                                    <i class="fas fa-coins"></i>
+                                    <span>${redemption.advantage?.cost_coins || 0} moedas</span>
+                                </div>
+                                <div class="coupon-detail-item">
+                                    <i class="fas fa-calendar"></i>
+                                    <span>${date}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="coupon-footer">
+                            <p class="coupon-instruction">
+                                <i class="fas fa-info-circle"></i>
+                                Apresente este código no momento da utilização da vantagem
+                            </p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } catch (error) {
+            console.error('Erro ao carregar cupons:', error);
+            container.innerHTML = `
+                <div class="empty-state" style="width: 100%;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Erro ao carregar cupons</h3>
+                    <p>Verifique a conexão com o servidor</p>
+                </div>
+            `;
+        }
+    }
+
     async loadStudentAdvantages() {
         const grid = document.getElementById('studentAdvantagesGrid');
         if (!grid) return;
@@ -1244,8 +1446,12 @@ class PointSystem {
             this.loadCompanies();
         } else if (tabName === 'student-extract') {
             this.loadStudentAccount();
+        } else if (tabName === 'student-coupons') {
+            this.loadStudentCoupons();
         } else if (tabName === 'professor-send-coins' || tabName === 'professor-extract') {
             this.loadProfessorAccount();
+        } else if (tabName === 'professor-students') {
+            this.loadProfessorStudents();
         }
     }
 }

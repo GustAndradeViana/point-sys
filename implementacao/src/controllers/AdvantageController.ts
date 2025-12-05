@@ -6,6 +6,7 @@ import { Transaction } from '../models/Transaction';
 import { Redemption } from '../models/Redemption';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { sendMail } from '../utils/mailer';
+import { generateCouponEmailHTML, generateCouponEmailText } from '../utils/emailTemplates';
 
 export class AdvantageController {
   private advantageModel = new Advantage();
@@ -188,34 +189,34 @@ export class AdvantageController {
         status: 'pending'
       });
 
-      // Enviar emails com o cupom (aluno e empresa)
       const studentEmail = req.user.email;
       const companyEmail = company.email || (company as any).user_email;
 
-      const emailText = `Cupom de resgate - Sistema de Mérito Acadêmico
-
-Vantagem: ${advantage.title}
-Empresa: ${company.name}
-Valor em moedas: ${advantage.cost_coins}
-
-Código do resgate: ${redemptionCode}
-
-Apresente este código no momento da utilização da vantagem.`;
+      const couponData = {
+        redemptionCode: redemptionCode,
+        advantageTitle: advantage.title,
+        companyName: company.name,
+        costCoins: advantage.cost_coins,
+        studentName: student.name,
+        createdAt: redemption.created_at
+      };
 
       try {
         if (studentEmail) {
           await sendMail({
             to: studentEmail,
-            subject: 'Cupom de vantagem resgatada',
-            text: emailText
+            subject: '🎉 Cupom de vantagem resgatada - Sistema de Mérito Acadêmico',
+            text: generateCouponEmailText(couponData, true),
+            html: generateCouponEmailHTML(couponData, true)
           });
         }
 
         if (companyEmail) {
           await sendMail({
             to: companyEmail,
-            subject: 'Aluno resgatou uma vantagem',
-            text: emailText
+            subject: 'Aluno resgatou uma vantagem - Sistema de Mérito Acadêmico',
+            text: generateCouponEmailText(couponData, false),
+            html: generateCouponEmailHTML(couponData, false)
           });
         }
       } catch (mailError) {
@@ -242,7 +243,6 @@ Apresente este código no momento da utilização da vantagem.`;
     }
   }
 
-  // STUDENT - Listar resgates do aluno logado
   public async getStudentRedemptions(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       if (req.user.type !== 'student') {
@@ -257,7 +257,37 @@ Apresente este código no momento da utilização da vantagem.`;
       }
 
       const redemptions = await this.redemptionModel.findByStudentId(student.id);
-      res.json({ redemptions });
+
+      const enrichedRedemptions = await Promise.all(
+        redemptions.map(async (redemption) => {
+          const advantage = await this.advantageModel.findById(redemption.advantage_id);
+          if (!advantage) {
+            return {
+              ...redemption,
+              advantage: null,
+              company: null
+            };
+          }
+          
+          const company = await this.companyModel.findById(advantage.company_id);
+          return {
+            ...redemption,
+            advantage: {
+              id: advantage.id,
+              title: advantage.title,
+              description: advantage.description,
+              image_url: advantage.image_url,
+              cost_coins: advantage.cost_coins
+            },
+            company: company ? {
+              id: company.id,
+              name: company.name
+            } : null
+          };
+        })
+      );
+
+      res.json({ redemptions: enrichedRedemptions });
     } catch (error) {
       console.error('Erro ao listar resgates do aluno:', error);
       res.status(500).json({ error: 'Erro interno do servidor' });
